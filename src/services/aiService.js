@@ -1,200 +1,199 @@
-import OpenAI from 'openai'
+import OpenAI from 'openai';
 
+// Initialize OpenAI client with OpenRouter
 const openai = new OpenAI({
-  apiKey: process.env.REACT_APP_OPENAI_API_KEY || 'demo-key',
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY || 'demo-key',
   baseURL: "https://openrouter.ai/api/v1",
   dangerouslyAllowBrowser: true,
-})
+});
 
-// Fallback responses for demo mode when API key is not available
-const demoResponses = [
-  {
-    explanation: "Based on your symptoms, there are several possible explanations. Common causes could include viral infections, stress-related symptoms, or minor conditions that often resolve on their own. However, it's important to monitor your symptoms and seek medical attention if they worsen or persist.",
-    symptoms: ["general discomfort", "fatigue"],
-    possibleConditions: ["Viral infection", "Stress response", "Minor illness"],
-    urgencyLevel: "low",
-    confidenceScore: 0.6,
-    keyInsights: [
-      "Symptoms appear to be mild and non-specific",
-      "Could be related to common viral infections",
-      "Stress and lifestyle factors may be contributing"
-    ],
-    recommendedActions: [
-      "Rest and stay hydrated",
-      "Monitor symptoms for any changes",
-      "Consult healthcare provider if symptoms persist"
-    ],
+// Mock responses for demo when API key is not available
+const mockResponses = {
+  headache: {
+    diagnosis: "Based on your symptoms, you might be experiencing a tension headache or migraine. Common causes include stress, dehydration, eye strain, or changes in sleep patterns. If headaches persist or worsen, consider consulting a healthcare provider.",
+    confidence: 0.75,
     recommendations: [
-      { text: "Get adequate sleep (7-9 hours) to support immune function", type: "Lifestyle" },
-      { text: "Stay hydrated by drinking plenty of water throughout the day", type: "General" },
-      { text: "Consider gentle exercise like walking to boost circulation", type: "Exercise" }
+      { type: 'Lifestyle', text: 'Ensure adequate hydration by drinking 8-10 glasses of water daily' },
+      { type: 'Diet', text: 'Avoid common trigger foods like aged cheese, chocolate, and caffeine' },
+      { type: 'Exercise', text: 'Practice gentle neck stretches and relaxation techniques' }
     ]
   },
-  {
-    explanation: "Your symptoms suggest a possible upper respiratory condition or allergic reaction. These are common and usually manageable with proper care. The combination of symptoms you've described could indicate several conditions, from minor infections to environmental factors.",
-    symptoms: ["respiratory symptoms", "congestion"],
-    possibleConditions: ["Upper respiratory infection", "Allergic rhinitis", "Common cold"],
-    urgencyLevel: "low",
-    confidenceScore: 0.7,
-    keyInsights: [
-      "Respiratory symptoms are commonly caused by infections or allergies",
-      "Seasonal factors may be contributing to symptoms",
-      "Most cases resolve within 7-10 days with proper care"
-    ],
-    recommendedActions: [
-      "Use a humidifier to ease congestion",
-      "Avoid known allergens if applicable",
-      "Seek medical care if symptoms worsen or fever develops"
-    ],
+  fever: {
+    diagnosis: "A fever typically indicates your body is fighting an infection. It could be viral (like a cold or flu) or bacterial. Monitor your temperature and watch for additional symptoms. Seek medical attention if fever exceeds 103°F (39.4°C) or persists for more than 3 days.",
+    confidence: 0.8,
     recommendations: [
-      { text: "Use a humidifier or steam inhalation to ease breathing", type: "Lifestyle" },
-      { text: "Avoid dairy products temporarily as they can increase mucus production", type: "Diet" },
-      { text: "Try warm salt water gargles to soothe throat irritation", type: "General" }
+      { type: 'Lifestyle', text: 'Get plenty of rest and sleep to help your body recover' },
+      { type: 'Diet', text: 'Stay hydrated with water, herbal teas, and clear broths' },
+      { type: 'Lifestyle', text: 'Use cool compresses or take lukewarm baths to reduce body temperature' }
+    ]
+  },
+  cough: {
+    diagnosis: "Your cough could be due to various causes including viral infections, allergies, acid reflux, or environmental irritants. Dry coughs often indicate upper respiratory irritation, while productive coughs may suggest lower respiratory involvement.",
+    confidence: 0.7,
+    recommendations: [
+      { type: 'Lifestyle', text: 'Use a humidifier to add moisture to the air' },
+      { type: 'Diet', text: 'Drink warm liquids like herbal tea with honey to soothe throat irritation' },
+      { type: 'Lifestyle', text: 'Avoid smoking and exposure to air pollutants' }
     ]
   }
-]
+};
 
-export const getSymptomAnalysis = async (symptoms) => {
-  // Check if we have a valid API key
-  const apiKey = process.env.REACT_APP_OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY
-  
-  if (!apiKey || apiKey === 'demo-key') {
-    // Return demo response when no API key is available
-    console.log('Demo mode: Using fallback AI response')
-    const randomResponse = demoResponses[Math.floor(Math.random() * demoResponses.length)]
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000))
-    
-    return {
-      ...randomResponse,
-      symptoms: extractSymptomsFromText(symptoms)
-    }
-  }
-
+export const analyzeSymptoms = async (symptoms) => {
   try {
-    const prompt = `As a medical AI assistant, analyze these symptoms and provide a helpful response. Remember this is for informational purposes only and not a substitute for professional medical advice.
+    // Check if we have a valid API key
+    if (!import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY === 'demo-key') {
+      // Use mock response for demo
+      const symptomLower = symptoms.toLowerCase();
+      if (symptomLower.includes('headache') || symptomLower.includes('head')) {
+        return mockResponses.headache;
+      } else if (symptomLower.includes('fever') || symptomLower.includes('temperature')) {
+        return mockResponses.fever;
+      } else if (symptomLower.includes('cough')) {
+        return mockResponses.cough;
+      } else {
+        return {
+          diagnosis: `Thank you for describing your symptoms: "${symptoms}". This appears to be a health concern that would benefit from professional medical evaluation. While I can provide general information, I recommend consulting with a healthcare provider for proper diagnosis and treatment recommendations.`,
+          confidence: 0.6,
+          recommendations: [
+            { type: 'Lifestyle', text: 'Monitor your symptoms and note any changes or patterns' },
+            { type: 'Lifestyle', text: 'Maintain good hygiene and adequate rest' },
+            { type: 'Diet', text: 'Stay hydrated and maintain a balanced diet to support your immune system' }
+          ]
+        };
+      }
+    }
 
-Symptoms described: "${symptoms}"
-
-Please provide a JSON response with the following structure:
-{
-  "explanation": "A detailed, empathetic explanation of possible causes and general guidance",
-  "symptoms": ["list of identified symptoms"],
-  "possibleConditions": ["list of 2-3 most likely conditions"],
-  "urgencyLevel": "low/medium/high",
-  "confidenceScore": 0.7,
-  "keyInsights": ["3-4 key insights about the symptoms"],
-  "recommendedActions": ["3-4 recommended next steps"],
-  "recommendations": [
-    {"text": "specific recommendation", "type": "Diet/Exercise/Lifestyle/General"}
-  ]
-}
-
-Guidelines:
-- Be empathetic and reassuring while being medically responsible
-- Always recommend consulting healthcare professionals for persistent or concerning symptoms
-- Provide practical, actionable advice
-- Avoid definitive diagnoses
-- Consider common causes first
-- Include relevant lifestyle recommendations`
-
-    const completion = await openai.chat.completions.create({
+    const response = await openai.chat.completions.create({
       model: "google/gemini-2.0-flash-001",
       messages: [
         {
           role: "system",
-          content: "You are a helpful medical AI assistant. Provide informative, empathetic responses about symptoms while emphasizing that this is not a substitute for professional medical advice. Always respond with valid JSON."
+          content: `You are a helpful AI health assistant that provides initial symptom analysis. 
+          
+          IMPORTANT DISCLAIMERS:
+          - Always remind users this is for informational purposes only
+          - Emphasize that this is not a substitute for professional medical advice
+          - Recommend consulting healthcare providers for proper diagnosis
+          - Never provide specific medication recommendations
+          
+          For each symptom analysis, provide:
+          1. A thoughtful analysis of potential causes
+          2. A confidence score between 0-1
+          3. General lifestyle and wellness recommendations
+          
+          Keep responses informative but accessible, and always emphasize the importance of professional medical care when appropriate.`
         },
         {
           role: "user",
-          content: prompt
+          content: `Please analyze these symptoms and provide insights: ${symptoms}`
         }
       ],
       temperature: 0.7,
-      max_tokens: 1500
-    })
+      max_tokens: 500
+    });
 
-    const response = completion.choices[0].message.content
+    const aiResponse = response.choices[0].message.content;
     
-    try {
-      // Try to parse JSON response
-      const jsonMatch = response.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        const analysis = JSON.parse(jsonMatch[0])
-        return analysis
-      } else {
-        // Fallback if JSON parsing fails
-        return createFallbackResponse(symptoms, response)
-      }
-    } catch (parseError) {
-      console.warn('Failed to parse AI response as JSON, using fallback')
-      return createFallbackResponse(symptoms, response)
-    }
+    // Extract confidence score (simplified - in production, you'd train the AI to provide this)
+    let confidence = 0.7; // Default confidence
+    if (symptoms.length > 50) confidence += 0.1; // More detailed symptoms = higher confidence
+    if (symptoms.toLowerCase().includes('pain')) confidence += 0.05;
+    confidence = Math.min(confidence, 0.95); // Cap at 95%
+
+    // Generate basic recommendations
+    const recommendations = [
+      { type: 'Lifestyle', text: 'Monitor your symptoms and seek medical attention if they worsen or persist' },
+      { type: 'Diet', text: 'Maintain adequate hydration and a balanced diet' },
+      { type: 'Lifestyle', text: 'Ensure adequate rest and avoid overexertion' }
+    ];
+
+    return {
+      diagnosis: aiResponse,
+      confidence,
+      recommendations
+    };
 
   } catch (error) {
-    console.error('AI service error:', error)
+    console.error('Error calling OpenAI API:', error);
     
-    // Return a fallback response
+    // Fallback to mock response on error
     return {
-      explanation: "I'm having trouble analyzing your symptoms right now, but I can offer some general guidance. If you're experiencing concerning symptoms, it's always best to consult with a healthcare professional who can provide personalized advice based on your medical history.",
-      symptoms: extractSymptomsFromText(symptoms),
-      possibleConditions: ["Various possible causes"],
-      urgencyLevel: "medium",
-      confidenceScore: 0.5,
-      keyInsights: [
-        "Unable to complete full analysis at this time",
-        "Symptoms warrant professional medical evaluation",
-        "Consider monitoring symptoms closely"
-      ],
-      recommendedActions: [
-        "Consult with a healthcare provider",
-        "Monitor symptoms for any changes",
-        "Seek immediate care if symptoms worsen"
-      ],
+      diagnosis: "I'm having trouble analyzing your symptoms right now. This could be due to a temporary service issue. Please try again in a moment, or consider consulting with a healthcare provider for immediate concerns.",
+      confidence: 0.5,
       recommendations: [
-        { text: "Schedule an appointment with your healthcare provider", type: "General" },
-        { text: "Keep a symptom diary to track changes", type: "General" }
+        { type: 'Lifestyle', text: 'If symptoms are severe or concerning, seek immediate medical attention' },
+        { type: 'Lifestyle', text: 'Monitor your symptoms and note any changes' }
       ]
+    };
+  }
+};
+
+export const generateHealthRecommendations = async (symptomEntries) => {
+  try {
+    if (!import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY === 'demo-key') {
+      // Mock recommendations for demo
+      return [
+        { type: 'Diet', text: 'Consider incorporating more anti-inflammatory foods like leafy greens, berries, and fatty fish into your diet' },
+        { type: 'Exercise', text: 'Gentle yoga or stretching exercises may help reduce tension and improve overall well-being' },
+        { type: 'Lifestyle', text: 'Establish a consistent sleep schedule of 7-9 hours per night to support your immune system' },
+        { type: 'Lifestyle', text: 'Practice stress management techniques such as deep breathing or meditation' }
+      ];
     }
-  }
-}
 
-const createFallbackResponse = (symptoms, aiResponse) => {
-  return {
-    explanation: aiResponse || "Based on your symptoms, I recommend monitoring them closely and consulting with a healthcare professional for proper evaluation and guidance.",
-    symptoms: extractSymptomsFromText(symptoms),
-    possibleConditions: ["Various possible causes"],
-    urgencyLevel: "medium",
-    confidenceScore: 0.6,
-    keyInsights: [
-      "Symptoms require professional evaluation",
-      "Multiple factors could be contributing",
-      "Proper medical assessment is recommended"
-    ],
-    recommendedActions: [
-      "Consult healthcare provider",
-      "Monitor symptom progression",
-      "Maintain symptom diary"
-    ],
-    recommendations: [
-      { text: "Schedule medical consultation", type: "General" },
-      { text: "Track symptoms daily", type: "General" }
-    ]
-  }
-}
+    const symptomSummary = symptomEntries
+      .slice(0, 10)
+      .map(entry => `${entry.symptoms} (${new Date(entry.timestamp).toLocaleDateString()})`)
+      .join('; ');
 
-const extractSymptomsFromText = (text) => {
-  // Simple symptom extraction logic
-  const commonSymptoms = [
-    'headache', 'fever', 'cough', 'fatigue', 'nausea', 'dizziness', 'pain',
-    'shortness of breath', 'chest pain', 'stomach ache', 'muscle ache',
-    'sore throat', 'runny nose', 'congestion', 'anxiety', 'stress'
-  ]
-  
-  const foundSymptoms = commonSymptoms.filter(symptom => 
-    text.toLowerCase().includes(symptom)
-  )
-  
-  return foundSymptoms.length > 0 ? foundSymptoms : ['general symptoms']
-}
+    const response = await openai.chat.completions.create({
+      model: "google/gemini-2.0-flash-001",
+      messages: [
+        {
+          role: "system",
+          content: `You are a health and wellness advisor. Based on a user's symptom history, provide personalized lifestyle, dietary, and wellness recommendations.
+          
+          IMPORTANT:
+          - Focus on general wellness and prevention
+          - Do not provide specific medical advice or diagnose conditions
+          - Recommend consulting healthcare providers for medical concerns
+          - Suggest evidence-based lifestyle improvements
+          
+          Provide 3-5 recommendations in these categories: Diet, Exercise, Lifestyle.
+          Format each as: "type|recommendation text"`
+        },
+        {
+          role: "user",
+          content: `Based on this symptom history, provide personalized health recommendations: ${symptomSummary}`
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 400
+    });
+
+    const recommendations = response.choices[0].message.content
+      .split('\n')
+      .filter(line => line.includes('|'))
+      .map(line => {
+        const [type, text] = line.split('|');
+        return {
+          type: type.trim(),
+          text: text.trim()
+        };
+      });
+
+    return recommendations.length > 0 ? recommendations : [
+      { type: 'Lifestyle', text: 'Maintain a consistent daily routine with adequate sleep and stress management' },
+      { type: 'Diet', text: 'Focus on a balanced diet rich in fruits, vegetables, and whole grains' },
+      { type: 'Exercise', text: 'Incorporate regular physical activity appropriate for your fitness level' }
+    ];
+
+  } catch (error) {
+    console.error('Error generating recommendations:', error);
+    
+    return [
+      { type: 'Lifestyle', text: 'Focus on maintaining good sleep hygiene and stress management' },
+      { type: 'Diet', text: 'Ensure adequate nutrition with a balanced, varied diet' },
+      { type: 'Exercise', text: 'Stay active with regular, moderate exercise as appropriate for your condition' }
+    ];
+  }
+};

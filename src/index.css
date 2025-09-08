@@ -2,54 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --primary: hsl(220 89% 50%);
-  --accent: hsl(10 90% 55%);
-  --bg: hsl(220 22% 15%);
-  --surface: hsl(220 22% 20%);
-  --text-primary: hsl(0 0% 95%);
-  --text-secondary: hsl(0 0% 75%);
-}
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: var(--bg);
-  color: var(--text-primary);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-.chat-message {
-  animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+@layer base {
+  * {
+    border-color: hsl(220 22% 25%);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: hsl(220 22% 15%);
+    color: hsl(0 0% 95%);
   }
 }
 
-.pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-3 rounded-md font-medium hover:bg-primary/90 transition-colors duration-150;
   }
-  50% {
-    opacity: .5;
+  
+  .btn-secondary {
+    @apply bg-surface text-text-primary border border-text-secondary/20 px-6 py-3 rounded-md font-medium hover:bg-surface/80 transition-colors duration-150;
+  }
+  
+  .btn-ghost {
+    @apply text-text-secondary hover:text-text-primary px-4 py-2 rounded-md transition-colors duration-150;
+  }
+  
+  .card {
+    @apply bg-surface border border-text-secondary/10 rounded-lg p-6 shadow-card;
+  }
+  
+  .input {
+    @apply bg-surface border border-text-secondary/20 text-text-primary placeholder-text-secondary px-4 py-3 rounded-md focus:border-primary focus:outline-none transition-colors duration-150;
   }
 }

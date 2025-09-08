@@ -29,10 +29,8 @@ export default {
         'card': '0 8px 24px hsla(0, 0%, 0%, 0.12)',
       },
       animation: {
-        'fast': '150ms cubic-bezier(0.22,1,0.36,1)',
-        'base': '250ms cubic-bezier(0.22,1,0.36,1)',
-        'slow': '400ms cubic-bezier(0.22,1,0.36,1)',
-      }
+        'pulse-slow': 'pulse 2s cubic-bezier(0.22,1,0.36,1) infinite',
+      },
     },
   },
   plugins: [],
