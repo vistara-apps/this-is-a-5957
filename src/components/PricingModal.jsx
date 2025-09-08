@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Check, Zap, Shield, TrendingUp, Brain, Loader2, CreditCard } from 'lucide-react';
-import { Button } from './Button';
+import Button from './Button';
 import { stripeService, pricingConfig } from '../services/stripeService';
 
 export const PricingModal = ({ onClose, onUpgrade, currentPlan, user }) => {
